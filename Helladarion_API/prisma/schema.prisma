@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -11,4 +5,108 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+model autores {
+  id               Int                @id @default(autoincrement())
+  nome             String?            @db.VarChar(300)
+  materias_autores materias_autores[]
+}
+
+model capas {
+  id             Int        @id @default(autoincrement())
+  desenhista     String?    @db.VarChar(120)
+  cores          String?    @db.VarChar(120)
+  nome_da_imagem String?    @db.VarChar(128)
+  fonte          String?    @db.VarChar(120)
+  revistas       revistas[]
+}
+
+model editoras {
+  id       Int        @id @default(autoincrement())
+  nome     String?    @db.VarChar(30)
+  revistas revistas[]
+}
+
+model materias {
+  id                Int                 @id @default(autoincrement())
+  nome              String?             @db.VarChar(120)
+  resumo            String?             @db.VarChar(1000)
+  secao_id          Int
+  secoes            secoes              @relation(fields: [secao_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  materias_autores  materias_autores[]
+  materias_secoes   materias_secoes[]
+  materias_sistemas materias_sistemas[]
+  revistas_materias revistas_materias[]
+}
+
+model materias_autores {
+  materia_id Int
+  autor_id   Int
+  autores    autores  @relation(fields: [autor_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  materias   materias @relation(fields: [materia_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([materia_id, autor_id])
+}
+
+model materias_secoes {
+  materia_id Int
+  secao_id   Int
+  materias   materias @relation(fields: [materia_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  secoes     secoes   @relation(fields: [secao_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([materia_id, secao_id])
+}
+
+model materias_sistemas {
+  materia_id Int
+  sistema_id Int
+  materias   materias @relation(fields: [materia_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "matrias_sistemas_materia_id_fkey")
+  sistemas   sistemas @relation(fields: [sistema_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "matrias_sistemas_sistema_id_fkey")
+
+  @@id([materia_id, sistema_id], map: "matrias_sistemas_pkey")
+}
+
+model publicacoes {
+  id       Int        @id @default(autoincrement())
+  nome     String?    @db.VarChar(50)
+  revistas revistas[]
+}
+
+model revistas {
+  id                   String              @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  publicacao_id        Int
+  edicao               Int
+  editora_id           Int
+  quantidade_de_pagina Int
+  capa_id              Int
+  observacoes          String?             @db.VarChar(500)
+  capas                capas               @relation(fields: [capa_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  editoras             editoras            @relation(fields: [editora_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  publicacoes          publicacoes         @relation(fields: [publicacao_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  revistas_materias    revistas_materias[]
+}
+
+model revistas_materias {
+  revista_id String   @db.Uuid
+  materia_id Int
+  pagina     Int
+  materias   materias @relation(fields: [materia_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  revistas   revistas @relation(fields: [revista_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([revista_id, materia_id])
+}
+
+model secoes {
+  id              Int               @id @default(autoincrement())
+  nome            String?           @db.VarChar(50)
+  descricao       String?           @db.VarChar(800)
+  materias        materias[]
+  materias_secoes materias_secoes[]
+}
+
+model sistemas {
+  id                Int                 @id @default(autoincrement())
+  nome              String?             @db.VarChar(120)
+  materias_sistemas materias_sistemas[]
 }
